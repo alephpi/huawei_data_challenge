@@ -1,17 +1,10 @@
 import sys
 import numpy as np
-# import itertools
+from itertools import islice, product
 from data import InputData, OutputData, Config, Edge
 from typing import List
 
 DEBUG = False
-
-
-def Max(a, b):
-    if a > b:
-        return a
-    else:
-        return b
 
 
 def countWindowEntryTimes(inputData: InputData, timeWindowIndexs: List[int]):
@@ -313,20 +306,19 @@ def main(inputData: InputData) -> OutputData:
                 requestTi = workshop.minTi + 1
             else:
                 requestTi = workshop.minTi
-            minTiOfDid[curDid] = Max(minTiOfDid[curDid], requestTi)
+            minTiOfDid[curDid] = max(minTiOfDid[curDid], requestTi)
             inCnt[curDid] = inCnt[curDid] - 1
             if inCnt[curDid] == 0:
                 queue.Push(curDid)
 
     # print(ridsOfDid)
 
-    # possible_regionIndexs = [p for p in itertools.product(*ridsOfDid)]
-
     ridOfDid = []
     windowEntryTimes, deviceOnCoreProductionLine = countWindowEntryTimes(
         inputData, widOfPid)
     for did, rids in enumerate(ridsOfDid):
-        InstallCosts = [inputData.regions[rid].energyType for rid in rids]
+        InstallCosts = [
+            inputData.devices[did].energyCosts[inputData.regions[rid].energyType] for rid in rids]
         if not isDeviceInPipeline[did]:
             idOfMinInstallCost = min(
                 range(len(InstallCosts)), key=InstallCosts.__getitem__)
@@ -355,26 +347,32 @@ def main(inputData: InputData) -> OutputData:
     # n_selected  = min(int(len(possible_regionIndexs)/10), 100)
     # selected_regionIndexs = random.sample(possible_regionIndexs, n_selected)
 
-    # Costs = [float("inf")] * len(possible_regionIndexs)
-    # for idx, region_device in enumerate(possible_regionIndexs):
-    #     outputData = OutputData(
-    #         deviceNum=inputData.D,
-    #         regionIndexs=region_device,
-    #         stepNum=inputData.pipeline.edgeNum + 1,
-    #         timeWindowIndexs=widOfPid,
-    #     )
-    #     Costs[idx] = computeCost(inputData, outputData)
+    # cost = float("inf")
+    # outputData = OutputData(
+    #     deviceNum=inputData.D,
+    #     regionIndexs=[],
+    #     stepNum=inputData.pipeline.edgeNum + 1,
+    #     timeWindowIndexs=widOfPid,
+    # )
+    # curOutputData = OutputData(
+    #     deviceNum=inputData.D,
+    #     regionIndexs=[],
+    #     stepNum=inputData.pipeline.edgeNum + 1,
+    #     timeWindowIndexs=widOfPid,
+    # )
+    # # reduce dimension of ridsOfDid
+    # for did in range(InputData.D):
+    #     if not isDeviceInPipeline[did]:
+    #         ridsOfDid[did]
 
-    # cost = min(Costs)
-    # best_regionIndex = Costs.index(cost)
-    # outputData_FV = OutputData(
-    #         deviceNum=inputData.D,
-    #         regionIndexs=possible_regionIndexs[best_regionIndex],
-    #         stepNum=inputData.pipeline.edgeNum + 1,
-    #         timeWindowIndexs=widOfPid,
-    #     )
+    # for region_device in islice(product(*ridsOfDid), 3000):
+    #     curOutputData.regionIndexs = region_device
+    #     curCost = computeCost(inputData, curOutputData)
+    #     if curCost < cost:
+    #         cost = curCost
+    #         outputData.regionIndexs = region_device
 
-    # return outputData_FV
+    # return outputData
 
 
 if __name__ == "__main__":
@@ -382,11 +380,11 @@ if __name__ == "__main__":
     import sys
     # import constants
 
-    inputData = InputData.from_file(sys.argv[1])
-    # inputData = InputData.from_file('./sample/sample.in')
+    # inputData = InputData.from_file(sys.argv[1])
+    inputData = InputData.from_file('./sample/sample.in')
     outputData = main(inputData)
     outputData.print()
-    # print(computeCost(inputData, outputData))
+    print(computeCost(inputData, outputData))
     # print(computeCost(inputData, outputData))
     # outputData = constants.sample_output
     # print('sample_output')
